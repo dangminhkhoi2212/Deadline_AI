@@ -1,0 +1,12 @@
+(define (problem pb1)
+    (:domain air-cargo)
+    (:objects C1 C2 P1 P2 SFO JFK)
+    (:init
+        (Cargo C1)(Cargo C2)
+        (Plane P1)(Plane P2)
+        (Airport SFO)(Airport JFK)
+        (at P1 SFO)(at P2 JFK)
+        (at C1 SFO)(at C2 JFK)
+    )
+    (:goal (and(at C1 JFK)(at C2 SFO)))
+)

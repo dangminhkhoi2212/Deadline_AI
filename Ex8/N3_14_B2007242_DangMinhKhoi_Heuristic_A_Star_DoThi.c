@@ -112,7 +112,7 @@ void sortList(List *list)
     int i, j;
     for (i = 0; i < list->size; i++)
         for (j = i + 1; j < list->size; j++)
-            if (list->Elements[i]->f < list->Elements[j]->f)
+            if (list->Elements[i]->f > list->Elements[j]->f)
                 swap(list->Elements[i], list->Elements[j]);
 }
 int goalCheck(State state, State goal){
