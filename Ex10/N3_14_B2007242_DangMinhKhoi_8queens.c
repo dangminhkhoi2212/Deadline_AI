@@ -1,6 +1,7 @@
 //Đặng Minh Khôi B2007242
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #define Maxlength 100
 typedef struct{
     int x, y;
@@ -58,9 +59,7 @@ ListCoord getConstrains(Constrains constrains, Coord coord){
     }
     return result;
 }
-#define MAX_VALUE 9
 #define EMPTY 0
-#define AREA_SQUARE_SIZE 3
 #define INF 999999
 
 typedef struct{
@@ -85,14 +84,18 @@ void initSudoku_8QueenWithValues(Sudoku_8Queen *sudoku, int inputs[Rows][Cols]){
 void printSudoku_8Queen(Sudoku_8Queen sudoku){
     int i, j;
     printf("Sudoku_8Queen:\n");
-    printf("----------------\n");
+    for (i = 0; i < Rows +Cols; i++)
+        printf("-");
+    printf("\n");
     for(i=0; i<Rows; i++){
         for(j=0; j<Cols; j++){
             printf("%d ", sudoku.cells[i][j]);
         }
         printf("\n");
     }
-    printf("----------------\n");
+    for(i=0; i<Rows+Cols; i++)
+        printf("-");
+    printf("\n");
 }
 void printListCoord(ListCoord listcoord)
 {
@@ -165,7 +168,10 @@ int count=0;
 int sudokuBackTracking(Sudoku_8Queen *sudoku, int column){
     // printf("exploredCounter: %d\n", exploredCounter);
     // printSudoku_8Queen(*sudoku);
-    if(column>Cols)
+    
+    if(column==Cols)
+        column=0;
+    if(count==Cols)
         return 1;
     int i;
     for(i=0; i<Cols; i++){
@@ -174,12 +180,19 @@ int sudokuBackTracking(Sudoku_8Queen *sudoku, int column){
         if(checkConstrains(*sudoku, position)==0){
             sudoku->cells[i][column] = 1;
             exploredCounter++;
-            if(sudokuBackTracking(sudoku, column+1))
+            count++;
+            if(sudokuBackTracking(sudoku, column+1)){
                 return 1;
+            }
             sudoku->cells[i][column] = 0;
+
         }
     }
+    count=0;
     return 0;
+}
+int random(int min , int max){
+    return min + rand()%(max+1-min);
 }
 Sudoku_8Queen solveSudoku_8Queen(Sudoku_8Queen sudoku){
     int i , j;
@@ -193,25 +206,21 @@ Sudoku_8Queen solveSudoku_8Queen(Sudoku_8Queen sudoku){
         }
     }
     exploredCounter=0;
-    if(sudokuBackTracking(&sudoku,0))
+    srand((int)time(0));
+    if (sudokuBackTracking(&sudoku, random(0, Cols - 1)))
         printf("Solved\n");
     else printf("Can not solve\n");
     printf("Explored %d states\n", exploredCounter);
     return sudoku;
 }
-int input1[8][8] = {
-    {0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0}
-} ;
+int input1[Rows][Cols];
 int main()
 {
     Sudoku_8Queen sudoku;
+    int i, j;
+    for (i = 0; i < Rows; i++)
+        for (j = 0; j < Cols; j++)
+            input1[i][j] = 0;
     initSudoku_8QueenWithValues(&sudoku, input1);
     printSudoku_8Queen(sudoku);
     Sudoku_8Queen  result=solveSudoku_8Queen(sudoku);
