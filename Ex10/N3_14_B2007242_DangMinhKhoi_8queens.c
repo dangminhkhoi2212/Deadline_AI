@@ -185,7 +185,6 @@ int sudokuBackTracking(Sudoku_8Queen *sudoku, int column){
                 return 1;
             }
             sudoku->cells[i][column] = 0;
-
         }
     }
     count=0;
