@@ -4,7 +4,7 @@
 #define Cols 4
 #define MaxLength 50
 #define MaxBlocks 8
-#define MAX_VALUE 4
+#define MAX_VALUE 5
 #define EMPTY 0
 #define AREA_SQUARE_SIZE 1
 #define INF 999999
@@ -97,7 +97,7 @@ void initNumsBlocks(KenKen *kenken){
 }
 void initBlocks(Block *block){
 	block->opr='n';
-	block->result=-1;
+	block->result=-9999;
 	initListCoord(&block->listCoord);
 }
 void initKenKen(KenKen *kenken){
@@ -181,49 +181,51 @@ int isFilledSudoku(KenKen kenken)
 				return 0;
 	return 1;
 }
-void printListCoord(ListCoord listcoord)
-{
-	int i;
-	for (i = 0; i < listcoord.size; i++)
-	{
-		printf("dinh: %d\n", indexOf(listcoord.data[i]));
+//void printListCoord(ListCoord listcoord)
+//{
+//	int i;
+//	for (i = 0; i < listcoord.size; i++)
+//	{
+//		printf("dinh: %d\n", indexOf(listcoord.data[i]));
+//	}
+//}
+int getNumberBlock(Coord pos, Block block[]){
+	int i, j;
+	for(i=0; i<MaxBlocks; i++){
+		for(j=0; j<block[i].listCoord.size; j++)
+			if (pos.x == block[i].listCoord.data[j].x && pos.y == block[i].listCoord.data[j].y)
+				return i;
 	}
+	return 0;
 }
-
 void spreadConstrainsFrom(Coord position, Constrains *constrains, ListCoord *changeds,KenKen kenken)
 {
 	int row = position.x, column = position.y;
 	int i, j;
-	for (i = 0; i < Rows; i++)
-	{
-		if (i != row)
-		{
+	// Tao rang buoc theo cot
+	for (i = 0; i < Rows; i++) {
+		if (i != row) {
 			Coord pos = {i, column};
 			if (addConstrain(constrains, position, pos))
 				appendListCoord(changeds, pos);
 		}
 	}
-
-	for (i = 0; i < Cols; i++)
-	{
-		if (i != column)
-		{
+	// Tao rang buoc theo hang
+	for (i = 0; i < Cols; i++) {
+		if (i != column) {
 			Coord pos = {row, i};
 			if (addConstrain(constrains, position, pos))
 				appendListCoord(changeds, pos);
 		}
 	}
-
-	// for(i=0; i<kenken.NBlock; i++){
-	// 	int sizeList=kenken.blocks[i].listCoord.size;
-	// 	for(j=0; j<sizeList; j++){
-	// 		Coord pos=kenken.blocks[i].listCoord.data[j];
-	// 		if(row!=pos.x || column!=pos.y)
-	// 			if(addConstrain(constrains, position, pos))
-	// 				appendListCoord(changeds, pos);
-	// 	}
+	// rang buoc theo khoi
+	// int indexBlock=getNumberBlock(position, kenken.blocks);
+	// for(i=0; i<kenken.blocks[indexBlock].listCoord.size; i++){
+	// 	Coord pos =kenken.blocks[indexBlock].listCoord.data[i];
+	// 	if(pos.x!=row && pos.y!=column)
+	// 		if(addConstrain(constrains, position, pos))
+	//  				appendListCoord(changeds, pos);
 	// }
-	
 }
 
 typedef struct
@@ -275,7 +277,7 @@ List getAvailableValues(Coord position, KenKen kenken)
 	ListCoord posList = getConstrains(kenken.constrains, position);
 	int availables[MAX_VALUE];
 	int i;
-	for (i = 0; i <= MAX_VALUE; i++)
+	for (i = 1; i <MAX_VALUE; i++)
 		availables[i] = 1;
 	for (i = 0; i < posList.size; i++)
 	{
@@ -285,9 +287,9 @@ List getAvailableValues(Coord position, KenKen kenken)
 	}
 	List result;
 	makeNullList(&result);
-	for (i = 1; i <= MAX_VALUE; i++)
-		if (availables[i]==1)
-			pushList(i, result.size + 1, &result);
+	for (i = 1; i < MAX_VALUE; i++)
+		if (availables[i])
+			appendList(i, &result);
 	return result;
 }
 Coord getNextEmptyCell(KenKen kenken)
@@ -324,15 +326,7 @@ Coord getNextMinDomainCell(KenKen kenken)
 }
 int exploredCounter = 0;
 
-int getNumberBlock(Coord pos, Block block[]){
-	int i, j;
-	for(i=0; i<MaxBlocks; i++){
-		for(j=0; j<block[i].listCoord.size; j++)
-			if (pos.x == block[i].listCoord.data[j].x && pos.y == block[i].listCoord.data[j].y)
-				return i;
-	}
-	return 0;
-}
+
 List Values[MaxBlocks];
 int caculator(List Values, char opr, int resultOfBlock){
 	int result=0;
@@ -351,7 +345,8 @@ int caculator(List Values, char opr, int resultOfBlock){
 			result += Values.Elements[i];
 	}
 	else if(opr=='-'){
-		for(i=0; i<Values.size; i++)
+		result=Values.Elements[0];
+		for(i=1; i<Values.size; i++)
 			result-=Values.Elements[i];
 	}
 	else if (opr == '*')
@@ -383,41 +378,46 @@ int checkNumber(Coord pos, KenKen kenken){
 	}
 	return 0;
 }
+int indexBlock=-1, sizeBlock=-2;
 int sudokuBackTracking(KenKen *kenken)
 {
 	printKenKen(*kenken);
 	printf("Explored: %d\n", exploredCounter);
 	if (isFilledSudoku(*kenken))
 		return 1;
+	if (Values[indexBlock].size == sizeBlock)
+			if(!caculator(Values[indexBlock], kenken->blocks[indexBlock].opr, kenken->blocks[indexBlock].result)){
+				return 0;
+			}
 	Coord position = getNextMinDomainCell(*kenken);
 	List availables = getAvailableValues(position, *kenken);
-	int indexBlock = getNumberBlock(position, kenken->blocks) ;
-	int sizeBlock=kenken->blocks[indexBlock].listCoord.size;
-	
-	if (availables.size == 0) return 0;
+	indexBlock = getNumberBlock(position, kenken->blocks) ;
+	sizeBlock=kenken->blocks[indexBlock].listCoord.size;
+
 	int j;
 	for (j = 0; j < availables.size; j++)
 	{
 		int value = availables.Elements[j];
 		kenken->cells[position.x][position.y] = value;
+		indexBlock = getNumberBlock(position, kenken->blocks);
 		appendList(value, &Values[indexBlock]);
-		if (Values[indexBlock].size == sizeBlock)
-			if (!caculator(Values[indexBlock], kenken->blocks[indexBlock].opr, kenken->blocks[indexBlock].result))
-			{
-				pop(&Values[indexBlock]);
-				continue;
-			}
-			else
-				makeNullList(&Values[indexBlock]);
 		exploredCounter++;
 		if (sudokuBackTracking(kenken))
 		{
 			return 1;
 		}
+		indexBlock = getNumberBlock(position, kenken->blocks);
+		pop(&Values[indexBlock]);
 		kenken->cells[position.x][position.y] = EMPTY;
 	}
-	makeNullList(&Values[indexBlock]);
 	return 0;
+}
+void printListCoord(ListCoord list){
+	int i;
+	for(i=0; i<list.size; i++){
+		Coord pos=list.data[i];
+		printf("(%d %d)\n", pos.x, pos.y);
+	}
 }
 KenKen solveSudoku(KenKen kenken)
 {
@@ -434,6 +434,10 @@ KenKen solveSudoku(KenKen kenken)
 	}
 	exploredCounter = 0;
 	makeNullList(&Values[0]);
+	
+	for(i=0; i<MaxBlocks; i++){
+		makeNullList(&Values[i]);	
+	}
 	if (sudokuBackTracking(&kenken))
 		printf("Solved\n");
 	else
@@ -455,10 +459,6 @@ int blocks[4][4]={
 int main(){
 	KenKen kenken;
 	initKenKenFromFile(&kenken);
-	// kenken.cells[1][0] = 2;
-	// kenken.cells[0][1]=2;
-	// kenken.cells[1][3]=2;
-	// kenken.cells[3][1] = 1;
 	kenken.cells[0][3] = 4;
 	printKenKen(kenken);
 	KenKen result=solveSudoku(kenken);
