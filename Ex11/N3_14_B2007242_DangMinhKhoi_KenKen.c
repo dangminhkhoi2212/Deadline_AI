@@ -1,10 +1,14 @@
+// Đặng Minh Khôi B2007242
+
+// CHÚ Ý: file input1.txt và file input5_6x6.txt bỏ ràng buộc khối thì chạy đúng
+
 #include <stdio.h>
 
-#define Rows 4
-#define Cols 4
+#define Rows 6
+#define Cols 6
 #define MaxLength 50
-#define MaxBlocks 8
-#define MAX_VALUE 5
+#define MaxBlocks 15
+#define MAX_VALUE 7
 #define EMPTY 0
 #define AREA_SQUARE_SIZE 1
 #define INF 999999
@@ -112,19 +116,23 @@ void initKenKen(KenKen *kenken){
 }
 
 void printKenKen(KenKen kenken){
-    int i, j;
+    int i, j,k;
     printf("KenKen Sudoku:\n");
     for(i=0; i<Rows; i++){
         if(i%AREA_SQUARE_SIZE==0)
-            printf("-------------------------\n");
-        for(j=0; j<Cols; j++){
+			for (k = 1; k <= kenken.NBlock*2.2; k++)
+				printf("-");
+		printf("\n");
+		for(j=0; j<Cols; j++){
             if(j%AREA_SQUARE_SIZE==0)
                 printf("| ");
             printf("%d ", kenken.cells[i][j]);
         }
         printf("|\n");
     }
-    printf("-------------------------\n");
+	for (k = 1; k <= kenken.NBlock * 2.2; k++)
+		printf("-");
+	printf("\n");
 }
 int getBlockNumber(Coord pos, Block block[])
 {
@@ -139,7 +147,7 @@ int getBlockNumber(Coord pos, Block block[])
 }
 void initKenKenFromFile(KenKen *kenken){
 	initKenKen(kenken);
-	FILE *f=freopen("input.txt", "r", stdin);
+	FILE *f = freopen("input5_6x6.txt", "r", stdin);
 	int m, n;
 	int i, j, num_opr, num;
 	char op;
@@ -156,8 +164,6 @@ void initKenKenFromFile(KenKen *kenken){
 	// 		printf("%d ",kenken->nums_blocks[i][j]);
 	// 	printf("\n");
 	// }
-
-
     scanf("%d\n", &num_opr);
 	kenken->NBlock=num_opr;
 	for(i=0; i<num_opr; i++)
@@ -316,11 +322,10 @@ Coord getNextMinDomainCell(KenKen kenken)
 int exploredCounter = 0;
 
 
-List Values[MaxBlocks];
 int caculator(List Values, char opr, int resultOfBlock){
 	int result=0;
 	int i, j;
-	for (i = 0; i < Values.size; i++)
+	for (i = 0; i < Values.size; i++)// sắp xếp theo thứ tự giảm dần
 		for (j = i + 1; j < Values.size; j++)
 			if (Values.Elements[i] < Values.Elements[j])
 			{
@@ -354,48 +359,36 @@ int caculator(List Values, char opr, int resultOfBlock){
 		return 0;
 	return 1;
 }
-int checkNumber(Coord pos, KenKen kenken){
-	int i;
-	for(i=0; i<Cols; i++){
-		if(i!=pos.y && kenken.cells[pos.x][pos.y]==kenken.cells[pos.x][i])
-			return 1;
-	}
-	for (i = 0; i < Rows; i++)
-	{
-		if (i != pos.x && kenken.cells[pos.x][pos.y] == kenken.cells[i][pos.y])
-			return 1;
-	}
-	return 0;
-}
-int indexBlock=-1, sizeBlock=-2;
+List Values[MaxBlocks];// lưu giá trị của mỗi lần thử giá trị value
 int sudokuBackTracking(KenKen *kenken)
 {
-	printKenKen(*kenken);
-	printf("Explored: %d\n", exploredCounter);
+// 	printKenKen(*kenken);
+// 	printf("Explored: %d\n", exploredCounter);
 	if (isFilledSudoku(*kenken))
 		return 1;
-	if (Values[indexBlock].size == sizeBlock)
-			if(!caculator(Values[indexBlock], kenken->blocks[indexBlock].opr, kenken->blocks[indexBlock].result)){
-				return 0;
-			}
 	Coord position = getNextMinDomainCell(*kenken);
 	List availables = getAvailableValues(position, *kenken);
-	indexBlock = getBlockNumber(position, kenken->blocks) ;
-	sizeBlock=kenken->blocks[indexBlock].listCoord.size;
+	int indexBlock = getBlockNumber(position, kenken->blocks);
+	int sizeBlock=kenken->blocks[indexBlock].listCoord.size;
 
 	int j;
 	for (j = 0; j < availables.size; j++)
 	{
 		int value = availables.Elements[j];
 		kenken->cells[position.x][position.y] = value;
-		indexBlock = getBlockNumber(position, kenken->blocks);
 		appendList(value, &Values[indexBlock]);
 		exploredCounter++;
+
+		// nếu số lượng phần tử đưa vào list Values mà == sô số lượng phần tử của khối
+		if (Values[indexBlock].size == sizeBlock)
+			if (!caculator(Values[indexBlock], kenken->blocks[indexBlock].opr, kenken->blocks[indexBlock].result))
+			{
+				pop(&Values[indexBlock]);
+				kenken->cells[position.x][position.y] = EMPTY;// trường hợp hết giá trị value để thử thì gán lại bằng rỗng
+				continue;
+			}
 		if (sudokuBackTracking(kenken))
-		{
 			return 1;
-		}
-		indexBlock = getBlockNumber(position, kenken->blocks);
 		pop(&Values[indexBlock]);
 		kenken->cells[position.x][position.y] = EMPTY;
 	}
