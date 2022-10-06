@@ -3,7 +3,7 @@
 // CHÚ Ý: file input1.txt và file input5_6x6.txt bỏ ràng buộc khối thì chạy đúng
 
 #include <stdio.h>
-
+// Nhớ chỉnh lại Rows Cols MaxBlocks tùy theo file input
 #define Rows 6
 #define Cols 6
 #define MaxLength 50
