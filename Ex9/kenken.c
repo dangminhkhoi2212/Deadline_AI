@@ -126,17 +126,16 @@ void printKenKen(KenKen kenken){
     }
     printf("-------------------------\n");
 }
-int sum(int a, int b){
-	return a+b;
-}
-int minus(int a, int b){
-	return a-b;
-}
-int multiplication(int a, int b) {
-	return a*b;
-}
-float division(int a, int b){
-	return (float)a/b;
+int getBlockNumber(Coord pos, Block block[])
+{
+	int i, j;
+	for (i = 0; i < MaxBlocks; i++)
+	{
+		for (j = 0; j < block[i].listCoord.size; j++)
+			if (pos.x == block[i].listCoord.data[j].x && pos.y == block[i].listCoord.data[j].y)
+				return i;
+	}
+	return 0;
 }
 void initKenKenFromFile(KenKen *kenken){
 	initKenKen(kenken);
@@ -144,7 +143,7 @@ void initKenKenFromFile(KenKen *kenken){
 	int m, n;
 	int i, j, num_opr, num;
 	char op;
-	scanf("%d%d", &m, &n);
+	scanf("%d %d", &m, &n);
 	for(i=0; i<m; i++){
 		for(j=0; j<n; j++){
 			int x;
@@ -168,9 +167,15 @@ void initKenKenFromFile(KenKen *kenken){
     	kenken->blocks[i].result=num;
     	kenken->blocks[i].opr=op;
 	}
-	// for(i=0; i<num_opr; i++){
-	// 	printf("%d %c\n", kenken->blocks[i].result,kenken->blocks[i].opr);
-	// }
+	Coord pos;
+	for(i=0; i<num_opr; i++){
+		if(kenken->blocks[i].opr=='n'){
+			int j;
+			for (j = 0; j < kenken->blocks[i].listCoord.size; j++)
+				pos = kenken->blocks[i].listCoord.data[j];
+				kenken->cells[pos.x][pos.y]=kenken->blocks[i].result;
+		}
+	}
 }
 int isFilledSudoku(KenKen kenken)
 {
@@ -181,23 +186,7 @@ int isFilledSudoku(KenKen kenken)
 				return 0;
 	return 1;
 }
-//void printListCoord(ListCoord listcoord)
-//{
-//	int i;
-//	for (i = 0; i < listcoord.size; i++)
-//	{
-//		printf("dinh: %d\n", indexOf(listcoord.data[i]));
-//	}
-//}
-int getNumberBlock(Coord pos, Block block[]){
-	int i, j;
-	for(i=0; i<MaxBlocks; i++){
-		for(j=0; j<block[i].listCoord.size; j++)
-			if (pos.x == block[i].listCoord.data[j].x && pos.y == block[i].listCoord.data[j].y)
-				return i;
-	}
-	return 0;
-}
+
 void spreadConstrainsFrom(Coord position, Constrains *constrains, ListCoord *changeds,KenKen kenken)
 {
 	int row = position.x, column = position.y;
@@ -219,7 +208,7 @@ void spreadConstrainsFrom(Coord position, Constrains *constrains, ListCoord *cha
 		}
 	}
 	// rang buoc theo khoi
-	// int indexBlock=getNumberBlock(position, kenken.blocks);
+	// int indexBlock=getBlockNumber(position, kenken.blocks);
 	// for(i=0; i<kenken.blocks[indexBlock].listCoord.size; i++){
 	// 	Coord pos =kenken.blocks[indexBlock].listCoord.data[i];
 	// 	if(pos.x!=row && pos.y!=column)
@@ -391,7 +380,7 @@ int sudokuBackTracking(KenKen *kenken)
 			}
 	Coord position = getNextMinDomainCell(*kenken);
 	List availables = getAvailableValues(position, *kenken);
-	indexBlock = getNumberBlock(position, kenken->blocks) ;
+	indexBlock = getBlockNumber(position, kenken->blocks) ;
 	sizeBlock=kenken->blocks[indexBlock].listCoord.size;
 
 	int j;
@@ -399,14 +388,14 @@ int sudokuBackTracking(KenKen *kenken)
 	{
 		int value = availables.Elements[j];
 		kenken->cells[position.x][position.y] = value;
-		indexBlock = getNumberBlock(position, kenken->blocks);
+		indexBlock = getBlockNumber(position, kenken->blocks);
 		appendList(value, &Values[indexBlock]);
 		exploredCounter++;
 		if (sudokuBackTracking(kenken))
 		{
 			return 1;
 		}
-		indexBlock = getNumberBlock(position, kenken->blocks);
+		indexBlock = getBlockNumber(position, kenken->blocks);
 		pop(&Values[indexBlock]);
 		kenken->cells[position.x][position.y] = EMPTY;
 	}
@@ -433,7 +422,6 @@ KenKen solveSudoku(KenKen kenken)
 		}
 	}
 	exploredCounter = 0;
-	makeNullList(&Values[0]);
 	
 	for(i=0; i<MaxBlocks; i++){
 		makeNullList(&Values[i]);	
@@ -445,21 +433,9 @@ KenKen solveSudoku(KenKen kenken)
 	printf("Explored %d states\n", exploredCounter);
 	return kenken;
 }
-int input1[4][4] = {
-	{2, 0, 1, 4},
-	{1, 0, 3, 0},
-	{0, 0, 0, 1},
-	{0, 4, 0, 0}};
-int blocks[4][4]={
-	{1,1,2,3},
-	{4,5,2,6},
-	{4,5,7,6},
-	{8,8,7,7}
-};
 int main(){
 	KenKen kenken;
 	initKenKenFromFile(&kenken);
-	kenken.cells[0][3] = 4;
 	printKenKen(kenken);
 	KenKen result=solveSudoku(kenken);
 	printKenKen(result);
